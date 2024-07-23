@@ -1,8 +1,3 @@
-#for each line in the CIS control, decide which section it is part of, i.e. Description, Rationale, etc
-#content for each section is split across multiple lines. First thing to do is identify which section (i.e. bucket) a line belongs to
-#If it contains a keyword that defines a section, drop the line into that corresponding bucket, if not then the bucket for the previous line is used as it must be part of that section
-#DD 07/04/2023
-
 import csv
 import traceback
 
@@ -23,11 +18,10 @@ def func_define_bucket(line, bucket):
             bucket = list_impact
         elif "Rationale:" in line:
             bucket = list_rationale
+        elif "Audit:" in line:
+            bucket = list_audit
         elif "Remediation:" in line:
             bucket = list_remediation
-        elif "Default Value:" in line:
-            #bucket = list_default_value
-            bucket = list_bin #not wanted, drop
         elif " | P a g e" in line or "Page" in line:
             bucket = list_bin #not wanted, drop
         elif "Profile Applicability:" in line:
@@ -43,7 +37,7 @@ def func_define_bucket(line, bucket):
         return bucket
 
 
-def func_export_data_to_csv(list_title, list_description, list_impact, list_rationale, list_remediation, list_default_value):
+def func_export_data_to_csv(list_title, list_description, list_impact, list_rationale, list_audit,list_remediation):
     #create a list (list_whiterabbit) of lists, then print it to csv
     #join the contents of each list, such as list_description, together, add it to list_whiterabbit, then print to csv
         
@@ -102,6 +96,9 @@ def func_export_data_to_csv(list_title, list_description, list_impact, list_rati
     combined_list_rationale = func_remove_title_keyword(combined_list_rationale)
     list_whiterabbit.append(combined_list_rationale)
     
+    combined_list_audit = " ".join(list_audit)
+    combined_list_audit = func_remove_title_keyword(combined_list_audit)
+    list_whiterabbit.append(combined_list_audit)
     #join the Remediation text and send it for exporting to csv
     combined_list_remediation = " ".join(list_remediation)
     combined_list_remediation = func_remove_title_keyword(combined_list_remediation)
@@ -233,9 +230,8 @@ list_description = []
 list_impact = []
 list_rationale = []
 list_remediation = []
-list_default_value = []
 list_bin = []
-list_csv_header = ["Section", "Title", "Profile Level", "Profile", "Description", "Impact", "Rationale", "Remediation"]
+list_csv_header = ["Section", "Title", "Profile Level", "Profile", "Description", "Impact", "Rationale","Audit","Remediation"]
 
 #create the csv writer 
 writer = csv.writer(output_file)
@@ -255,15 +251,15 @@ for line in f:
             #if the script sees a title line, and the buckets are already full, it means this is the start of a new section. Print the contents of the existing buckets to csv and clear them in readiness for the next section
             #Some lines have the title keywords in them, but not the other fields, i.e. the table of contents. We don't want these, so only print to csv if there is something in the Description list
             if list_description:
-                func_export_data_to_csv(list_title, list_description, list_impact, list_rationale, list_remediation,list_default_value)
+                func_export_data_to_csv(list_title, list_description, list_impact, list_rationale, list_audit,list_remediation)
             #clearing the buckets...
             list_title = []
             list_profile = []
             list_description = []
             list_impact = []
+            list_audit = []
             list_rationale = []
             list_remediation = []
-            list_default_value = []
             list_bin = []
         line = func_remove_funny_unicode(line) #remove troublesome unicode characters
         line = line.strip() #remove any spaces before or after the line
@@ -282,7 +278,7 @@ for line in f:
         input()
 
 #finally, export the last bucket to csv
-func_export_data_to_csv(list_title, list_description, list_impact, list_rationale, list_remediation, list_default_value)
+func_export_data_to_csv(list_title, list_description, list_impact, list_rationale, list_audit,list_remediation)
 
 
 f.close()
